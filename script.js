@@ -1,3 +1,6 @@
+// Global connection database to simulate server-side storage
+let globalConnections = JSON.parse(localStorage.getItem('lovesync_global_connections') || '{}');
+
 // App State
 let appState = {
     currentUser: null,
@@ -238,6 +241,16 @@ async function handleCreateCouple(e) {
     setTimeout(() => {
         const connectionCode = generateConnectionCode();
         
+        // Store connection in global database
+        globalConnections[connectionCode] = {
+            creator: userName,
+            partner: partnerName,
+            createdAt: Date.now(),
+            isConnected: false,
+            wallpapers: []
+        };
+        saveGlobalConnections();
+        
         appState.currentUser = userName;
         appState.partner = partnerName;
         appState.connectionCode = connectionCode;
@@ -265,7 +278,7 @@ async function handleJoinCouple(e) {
     
     const joinBtn = e.target.querySelector('.primary-btn');
     const userName = document.getElementById('joinName').value.trim();
-    const connectionCode = document.getElementById('connectionCode').value.trim();
+    const connectionCode = document.getElementById('connectionCode').value.trim().toUpperCase();
     
     if (!userName || !connectionCode) {
         showNotification("Please fill in all fields! 💝", "warning");
@@ -278,7 +291,7 @@ async function handleJoinCouple(e) {
     }
     
     if (connectionCode.length !== 6) {
-        showNotification("Connection code must be 6 digits! 🔢", "warning");
+        showNotification("Connection code must be 6 characters! 🔢", "warning");
         document.getElementById('connectionCode').style.borderColor = '#ef4444';
         setTimeout(() => {
             document.getElementById('connectionCode').style.borderColor = '';
@@ -292,25 +305,24 @@ async function handleJoinCouple(e) {
     
     // Simulate API call
     setTimeout(() => {
-        // Check if code exists (simulate)
-        const savedState = localStorage.getItem('lovesync_state');
-        let isValidCode = false;
-        
-        if (savedState) {
-            const state = JSON.parse(savedState);
-            if (state.connectionCode === connectionCode) {
-                isValidCode = true;
-                appState.currentUser = userName;
-                appState.partner = state.currentUser;
-                appState.connectionCode = connectionCode;
-                appState.isConnected = true;
-            }
-        }
+        // Check if code exists in global connections
+        const connection = globalConnections[connectionCode];
         
         joinBtn.classList.remove('loading');
         joinBtn.style.transform = 'scale(1)';
         
-        if (isValidCode) {
+        if (connection && !connection.isConnected) {
+            // Mark connection as active
+            connection.isConnected = true;
+            connection.joiner = userName;
+            saveGlobalConnections();
+            
+            appState.currentUser = userName;
+            appState.partner = connection.creator;
+            appState.connectionCode = connectionCode;
+            appState.isConnected = true;
+            appState.wallpapers = connection.wallpapers || [];
+            
             document.getElementById('connectionMessage').textContent = 
                 `Hearts connected! You and ${appState.partner} are now synced 💕`;
             document.getElementById('codeDisplay').style.display = 'none';
@@ -318,6 +330,8 @@ async function handleJoinCouple(e) {
             saveAppState();
             showScreen('success');
             showNotification("Successfully connected! Your hearts are now in sync 💕", "success");
+        } else if (connection && connection.isConnected) {
+            showNotification("This connection is already active! 💔", "error");
         } else {
             showNotification("Invalid connection code! Please check and try again 💔", "error");
             // Add error animation
@@ -485,6 +499,12 @@ function setWallpaper(imageUrl, title) {
     
     // Add new wallpaper
     appState.wallpapers.unshift(wallpaper);
+    
+    // Update global connection
+    if (appState.connectionCode && globalConnections[appState.connectionCode]) {
+        globalConnections[appState.connectionCode].wallpapers = appState.wallpapers;
+        saveGlobalConnections();
+    }
     
     // Update UI with animation
     updateWallpaperPreview(wallpaper);
@@ -664,6 +684,12 @@ function handleDisconnect() {
     }, 150);
     
     if (confirm('Are you sure you want to disconnect? This will end your romantic sync! 💔')) {
+        // Mark connection as inactive in global database
+        if (appState.connectionCode && globalConnections[appState.connectionCode]) {
+            globalConnections[appState.connectionCode].isConnected = false;
+            saveGlobalConnections();
+        }
+        
         appState = {
             currentUser: null,
             partner: null,
@@ -735,10 +761,22 @@ function saveAppState() {
     localStorage.setItem('lovesync_state', JSON.stringify(appState));
 }
 
+function saveGlobalConnections() {
+    localStorage.setItem('lovesync_global_connections', JSON.stringify(globalConnections));
+}
+
 function loadAppState() {
     const savedState = localStorage.getItem('lovesync_state');
     if (savedState) {
         appState = { ...appState, ...JSON.parse(savedState) };
+        
+        // Sync with global connections if connected
+        if (appState.isConnected && appState.connectionCode && globalConnections[appState.connectionCode]) {
+            const connection = globalConnections[appState.connectionCode];
+            if (connection.wallpapers) {
+                appState.wallpapers = connection.wallpapers;
+            }
+        }
         
         // If connected, go directly to app
         if (appState.isConnected) {
@@ -776,8 +814,19 @@ document.head.appendChild(styleSheet);
 setInterval(() => {
     if (appState.isConnected) {
         updatePartnerStatus();
+        
+        // Sync wallpapers from global connection
+        if (appState.connectionCode && globalConnections[appState.connectionCode]) {
+            const connection = globalConnections[appState.connectionCode];
+            if (connection.wallpapers && JSON.stringify(connection.wallpapers) !== JSON.stringify(appState.wallpapers)) {
+                appState.wallpapers = connection.wallpapers;
+                saveAppState();
+                loadCurrentWallpaper();
+                showNotification("Wallpapers synced with your partner! 💕", "info");
+            }
+        }
     }
-}, 60000);
+}, 10000);
 
 // Add some romantic touches
 setInterval(() => {
