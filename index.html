@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoveSync - Share Your Hearts</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Background Elements -->
+    <div class="bg-gradient"></div>
+    <div class="floating-hearts">
+        <div class="heart"></div>
+        <div class="heart"></div>
+        <div class="heart"></div>
+        <div class="heart"></div>
+        <div class="heart"></div>
+    </div>
+
+    <!-- Notification Container -->
+    <div class="notification-container" id="notificationContainer"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">💕</span>
+                <span class="logo-text">LoveSync Made By Harshit</span>
+            </div>
+            <div class="nav-actions">
+                <button class="nav-btn" id="mainBtn">
+                    <span class="icon">🏠</span>
+                    Main
+                </button>
+                <button class="nav-btn" id="historyBtn">
+                    <span class="icon">📚</span>
+                    History
+                </button>
+                <button class="nav-btn" id="vaultBtn">
+                    <span class="icon">🗃️</span>
+                    Vault
+                </button>
+                <button class="nav-btn" id="settingsBtn">
+                    <span class="icon">⚙️</span>
+                    Settings
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Welcome Screen -->
+        <div class="screen active" id="welcomeScreen">
+            <div class="welcome-content">
+                <div class="welcome-header">
+                    <h1 class="main-title">
+                        Share Your <span class="gradient-text">Hearts</span>
+                    </h1>
+                    <p class="subtitle">
+                        Instantly sync romantic wallpapers with your loved one
+                    </p>
+                </div>
+                
+                <div class="action-cards">
+                    <div class="action-card" id="createCoupleCard">
+                        <div class="card-icon">💝</div>
+                        <h3>Create Connection</h3>
+                        <p>Start a new romantic journey together</p>
+                        <button class="primary-btn">Get Started</button>
+                    </div>
+                    
+                    <div class="action-card" id="joinCoupleCard">
+                        <div class="card-icon">💖</div>
+                        <h3>Join Your Love</h3>
+                        <p>Connect with your partner's heart</p>
+                        <button class="primary-btn">Join Now</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Couple Screen -->
+        <div class="screen" id="createScreen">
+            <div class="form-container">
+                <div class="form-header">
+                    <h2>Create Your Love Connection</h2>
+                    <p>Generate a unique code to share with your partner</p>
+                </div>
+                
+                <form class="love-form" id="createForm">
+                    <div class="input-group">
+                        <label>Your Name</label>
+                        <input type="text" id="createName" placeholder="Enter your name" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Partner's Name</label>
+                        <input type="text" id="partnerName" placeholder="Your love's name" required>
+                    </div>
+                    
+                    <button type="submit" class="primary-btn">
+                        <span class="btn-text">Create Connection</span>
+                        <span class="btn-loader"></span>
+                    </button>
+                </form>
+                
+                <button class="back-btn" id="backFromCreate">← Back</button>
+            </div>
+        </div>
+
+        <!-- Join Couple Screen -->
+        <div class="screen" id="joinScreen">
+            <div class="form-container">
+                <div class="form-header">
+                    <h2>Join Your Partner</h2>
+                    <p>Enter the code your partner shared with you</p>
+                </div>
+                
+                <form class="love-form" id="joinForm">
+                    <div class="input-group">
+                        <label>Your Name</label>
+                        <input type="text" id="joinName" placeholder="Enter your name" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Connection Code</label>
+                        <input type="text" id="connectionCode" placeholder="Enter 6-digit code" maxlength="6" required>
+                    </div>
+                    
+                    <button type="submit" class="primary-btn">
+                        <span class="btn-text">Connect Hearts</span>
+                        <span class="btn-loader"></span>
+                    </button>
+                </form>
+                
+                <button class="back-btn" id="backFromJoin">← Back</button>
+            </div>
+        </div>
+
+        <!-- Connection Success Screen -->
+        <div class="screen" id="successScreen">
+            <div class="success-content">
+                <div class="success-animation">
+                    <div class="heart-burst">
+                        <div class="heart-particle"></div>
+                        <div class="heart-particle"></div>
+                        <div class="heart-particle"></div>
+                        <div class="heart-particle"></div>
+                        <div class="heart-particle"></div>
+                    </div>
+                    <div class="success-icon">💕</div>
+                </div>
+                
+                <h2>Hearts Connected!</h2>
+                <p id="connectionMessage">You and your partner are now synced</p>
+                
+                <div class="connection-code-display" id="codeDisplay" style="display: none;">
+                    <p>Share this code with your partner:</p>
+                    <div class="code-box">
+                        <span id="displayCode"></span>
+                        <button class="copy-btn" id="copyCodeBtn">📋</button>
+                    </div>
+                </div>
+                
+                <button class="primary-btn" id="continueBtn">Continue to App</button>
+            </div>
+        </div>
+
+        <!-- Main App Screen -->
+        <div class="screen" id="appScreen">
+            <div class="app-content">
+                <!-- Current Wallpaper Display -->
+                <div class="current-wallpaper">
+                    <div class="wallpaper-preview" id="wallpaperPreview">
+                        <div class="preview-placeholder">
+                            <span class="placeholder-icon">🖼️</span>
+                            <p>No wallpaper set yet</p>
+                        </div>
+                    </div>
+                    
+                    <div class="wallpaper-info">
+                        <h3 id="wallpaperTitle">Choose your first wallpaper</h3>
+                        <p id="wallpaperMeta">Set by: You • Just now</p>
+                    </div>
+                </div>
+
+                <!-- Upload Section -->
+                <div class="upload-section">
+                    <div class="upload-area" id="uploadArea">
+                        <input type="file" id="fileInput" accept="image/*" hidden>
+                        <div class="upload-content">
+                            <span class="upload-icon">📸</span>
+                            <h4>Upload New Wallpaper</h4>
+                            <p>Drag & drop or click to select</p>
+                        </div>
+                    </div>
+                    
+                    <div class="quick-actions">
+                        <button class="action-btn" id="cameraBtn">
+                            <span class="icon">📷</span>
+                            Camera
+                        </button>
+                        <button class="action-btn" id="galleryBtn">
+                            <span class="icon">🖼️</span>
+                            Gallery
+                        </button>
+                        <button class="action-btn" id="surpriseBtn">
+                            <span class="icon">✨</span>
+                            Surprise Me
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Partner Status -->
+                <div class="partner-status">
+                    <div class="status-indicator online"></div>
+                    <span id="partnerStatus">Partner is online</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Screen -->
+        <div class="screen" id="historyScreen">
+            <div class="screen-header">
+                <h2>Wallpaper History</h2>
+                <button class="back-btn" id="backFromHistory">← Back to Main</button>
+            </div>
+            
+            <div class="history-grid" id="historyGrid">
+                <!-- History items will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Vault Screen -->
+        <div class="screen" id="vaultScreen">
+            <div class="screen-header">
+                <h2>Media Vault</h2>
+                <button class="back-btn" id="backFromVault">← Back to Main</button>
+            </div>
+            
+            <div class="vault-grid" id="vaultGrid">
+                <!-- Vault items will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Settings Screen -->
+        <div class="screen" id="settingsScreen">
+            <div class="screen-header">
+                <h2>Settings</h2>
+                <button class="back-btn" id="backFromSettings">← Back to Main</button>
+            </div>
+            
+            <div class="settings-content">
+                <div class="setting-group">
+                    <h3>Notifications</h3>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="notificationsToggle" checked>
+                            <span class="toggle-slider"></span>
+                            Enable romantic notifications
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-group">
+                    <h3>Privacy</h3>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="autoSyncToggle" checked>
+                            <span class="toggle-slider"></span>
+                            Auto-sync wallpapers
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-group">
+                    <h3>Connection</h3>
+                    <button class="danger-btn" id="disconnectBtn">Disconnect from Partner</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
