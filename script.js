@@ -15,6 +15,7 @@ let appState = {
 let coupleRef = null;
 let wallpapersRef = null;
 let presenceRef = null;
+let partnerPresenceRef = null;
 
 // DOM Elements
 const screens = {
@@ -23,6 +24,7 @@ const screens = {
     join: document.getElementById('joinScreen'),
     success: document.getElementById('successScreen'),
     app: document.getElementById('appScreen'),
+    chat: document.getElementById('chatScreen'),
     history: document.getElementById('historyScreen'),
     vault: document.getElementById('vaultScreen'),
     settings: document.getElementById('settingsScreen')
@@ -151,10 +153,6 @@ function initializeEventListeners() {
             e.target.checked ? "Notifications enabled! 💕" : "Notifications disabled 🔕",
             "info"
         );
-        e.target.parentElement.style.transform = 'scale(1.05)';
-        setTimeout(() => {
-            e.target.parentElement.style.transform = 'scale(1)';
-        }, 200);
     });
     
     document.getElementById('autoSyncToggle').addEventListener('change', (e) => {
@@ -164,10 +162,6 @@ function initializeEventListeners() {
             e.target.checked ? "Auto-sync enabled! ✨" : "Auto-sync disabled 🔒",
             "info"
         );
-        e.target.parentElement.style.transform = 'scale(1.05)';
-        setTimeout(() => {
-            e.target.parentElement.style.transform = 'scale(1)';
-        }, 200);
     });
     
     document.getElementById('disconnectBtn').addEventListener('click', handleDisconnect);
@@ -222,16 +216,11 @@ async function handleCreateCouple(e) {
     const partnerName = document.getElementById('partnerName').value.trim();
     
     if (!userName || !partnerName) {
-        showNotification("Please fill in both names! 👫", "warning");
-        e.target.style.animation = 'shake 0.5s ease';
-        setTimeout(() => {
-            e.target.style.animation = '';
-        }, 500);
+        showNotification("Please fill in both names! 💫", "warning");
         return;
     }
     
     createBtn.classList.add('loading');
-    createBtn.style.transform = 'scale(0.95)';
     
     try {
         const connectionCode = generateConnectionCode();
@@ -277,7 +266,6 @@ async function handleCreateCouple(e) {
         document.getElementById('codeDisplay').style.display = 'block';
         
         createBtn.classList.remove('loading');
-        createBtn.style.transform = 'scale(1)';
         showScreen('success');
         
         showNotification("Connection code created! Share it with your love 💕", "success");
@@ -286,7 +274,6 @@ async function handleCreateCouple(e) {
         console.error('Error creating couple:', error);
         showNotification("Failed to create connection. Please try again! 😢", "error");
         createBtn.classList.remove('loading');
-        createBtn.style.transform = 'scale(1)';
     }
 }
 
@@ -300,24 +287,15 @@ async function handleJoinCouple(e) {
     
     if (!userName || !connectionCode) {
         showNotification("Please fill in all fields! 💑", "warning");
-        e.target.style.animation = 'shake 0.5s ease';
-        setTimeout(() => {
-            e.target.style.animation = '';
-        }, 500);
         return;
     }
     
     if (connectionCode.length !== 6) {
         showNotification("Connection code must be 6 characters! 🔢", "warning");
-        document.getElementById('connectionCode').style.borderColor = '#ef4444';
-        setTimeout(() => {
-            document.getElementById('connectionCode').style.borderColor = '';
-        }, 2000);
         return;
     }
     
     joinBtn.classList.add('loading');
-    joinBtn.style.transform = 'scale(0.95)';
     
     try {
         // Check if connection code exists in Firebase
@@ -325,12 +303,7 @@ async function handleJoinCouple(e) {
         
         if (!coupleSnapshot.exists()) {
             showNotification("Invalid connection code! Please check and try again 💔", "error");
-            document.getElementById('connectionCode').style.animation = 'shake 0.5s ease';
-            setTimeout(() => {
-                document.getElementById('connectionCode').style.animation = '';
-            }, 500);
             joinBtn.classList.remove('loading');
-            joinBtn.style.transform = 'scale(1)';
             return;
         }
         
@@ -340,7 +313,6 @@ async function handleJoinCouple(e) {
         if (coupleData.partner.joined) {
             showNotification("This connection is already complete! 💔", "error");
             joinBtn.classList.remove('loading');
-            joinBtn.style.transform = 'scale(1)';
             return;
         }
         
@@ -375,7 +347,6 @@ async function handleJoinCouple(e) {
         document.getElementById('codeDisplay').style.display = 'none';
         
         joinBtn.classList.remove('loading');
-        joinBtn.style.transform = 'scale(1)';
         showScreen('success');
         showNotification("Successfully connected! Your hearts are now in sync 💕", "success");
         
@@ -383,7 +354,6 @@ async function handleJoinCouple(e) {
         console.error('Error joining couple:', error);
         showNotification("Failed to join connection. Please try again! 😢", "error");
         joinBtn.classList.remove('loading');
-        joinBtn.style.transform = 'scale(1)';
     }
 }
 
@@ -418,55 +388,57 @@ function setupCoupleListeners(connectionCode) {
         }
     });
     
-    // Listen for partner presence
-    const partnerPath = appState.role === 'creator' ? 'partner' : 'creator';
-    const partnerPresenceRef = coupleRef.child(`${partnerPath}/isOnline`);
-    
-    partnerPresenceRef.on('value', (snapshot) => {
-        updatePartnerStatus(snapshot.val());
-    });
-    
-    // Listen for partner last seen
-    const partnerLastSeenRef = coupleRef.child(`${partnerPath}/lastSeen`);
-    partnerLastSeenRef.on('value', (snapshot) => {
-        const lastSeen = snapshot.val();
-        if (lastSeen) {
-            updatePartnerLastSeen(lastSeen);
-        }
-    });
-    
-    // Setup presence system
+    // Setup presence system with real-time monitoring
     setupPresenceSystem(connectionCode);
+    
+    // Initialize chat
+    if (typeof window.initializeChat === 'function') {
+        window.initializeChat();
+    }
 }
 
-// Setup presence system (online/offline status)
+// Setup presence system (online/offline status) - FIXED VERSION
 function setupPresenceSystem(connectionCode) {
     const myPath = appState.role === 'creator' ? 'creator' : 'partner';
+    const partnerPath = appState.role === 'creator' ? 'partner' : 'creator';
+    
     presenceRef = coupleRef.child(myPath);
+    partnerPresenceRef = coupleRef.child(partnerPath);
     
-    // Update online status
-    presenceRef.update({
-        isOnline: true,
-        lastSeen: firebase.database.ServerValue.TIMESTAMP
-    });
-    
-    // Set up presence detection
+    // Set up Firebase presence detection
     const connectedRef = window.firebaseDB.ref('.info/connected');
+    
     connectedRef.on('value', (snapshot) => {
-        if (snapshot.val()) {
-            presenceRef.onDisconnect().update({
-                isOnline: false,
-                lastSeen: firebase.database.ServerValue.TIMESTAMP
-            });
-            
+        if (snapshot.val() === true) {
+            // When connected, set online status
             presenceRef.update({
                 isOnline: true,
                 lastSeen: firebase.database.ServerValue.TIMESTAMP
             });
+            
+            // When disconnected, set offline status
+            presenceRef.onDisconnect().update({
+                isOnline: false,
+                lastSeen: firebase.database.ServerValue.TIMESTAMP
+            });
         }
     });
     
-    // Update last seen periodically
+    // Listen for partner's online status changes - REAL-TIME
+    partnerPresenceRef.child('isOnline').on('value', (snapshot) => {
+        const isOnline = snapshot.val();
+        updatePartnerStatusUI(isOnline);
+    });
+    
+    // Listen for partner's last seen changes
+    partnerPresenceRef.child('lastSeen').on('value', (snapshot) => {
+        const lastSeen = snapshot.val();
+        if (lastSeen && !snapshot.ref.parent.child('isOnline').val()) {
+            updatePartnerLastSeenUI(lastSeen);
+        }
+    });
+    
+    // Update last seen periodically when online
     setInterval(() => {
         if (appState.isConnected && presenceRef) {
             presenceRef.update({
@@ -477,13 +449,81 @@ function setupPresenceSystem(connectionCode) {
     
     // Update on visibility change
     document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && presenceRef) {
+        if (!document.hidden && presenceRef && appState.isConnected) {
             presenceRef.update({
                 isOnline: true,
                 lastSeen: firebase.database.ServerValue.TIMESTAMP
             });
         }
     });
+    
+    // Initial status check
+    partnerPresenceRef.once('value', (snapshot) => {
+        const partnerData = snapshot.val();
+        if (partnerData) {
+            updatePartnerStatusUI(partnerData.isOnline);
+        }
+    });
+}
+
+// Update partner status UI
+function updatePartnerStatusUI(isOnline) {
+    const statusElement = document.getElementById('partnerStatus');
+    const indicator = document.getElementById('statusIndicator');
+    const chatStatusIndicator = document.getElementById('chatStatusIndicator');
+    const chatPartnerStatus = document.getElementById('chatPartnerStatus');
+    
+    if (!appState.isConnected) {
+        statusElement.textContent = 'Not connected';
+        indicator.classList.add('offline');
+        indicator.classList.remove('online');
+        if (chatStatusIndicator) {
+            chatStatusIndicator.classList.add('offline');
+            chatStatusIndicator.classList.remove('online');
+        }
+        if (chatPartnerStatus) {
+            chatPartnerStatus.textContent = 'Offline';
+        }
+        return;
+    }
+    
+    if (isOnline) {
+        statusElement.textContent = `${appState.partner} is online`;
+        indicator.classList.remove('offline');
+        indicator.classList.add('online');
+        if (chatStatusIndicator) {
+            chatStatusIndicator.classList.remove('offline');
+            chatStatusIndicator.classList.add('online');
+        }
+        if (chatPartnerStatus) {
+            chatPartnerStatus.textContent = 'Online';
+        }
+    } else {
+        statusElement.textContent = `${appState.partner} was online recently`;
+        indicator.classList.add('offline');
+        indicator.classList.remove('online');
+        if (chatStatusIndicator) {
+            chatStatusIndicator.classList.add('offline');
+            chatStatusIndicator.classList.remove('online');
+        }
+        if (chatPartnerStatus) {
+            chatPartnerStatus.textContent = 'Offline';
+        }
+    }
+}
+
+// Update partner last seen UI
+function updatePartnerLastSeenUI(timestamp) {
+    const statusElement = document.getElementById('partnerStatus');
+    const chatPartnerStatus = document.getElementById('chatPartnerStatus');
+    
+    if (!appState.isConnected) return;
+    
+    const timeAgo = formatTime(timestamp);
+    statusElement.textContent = `${appState.partner} was online ${timeAgo}`;
+    if (chatPartnerStatus) {
+        chatPartnerStatus.textContent = `Last seen ${timeAgo}`;
+    }
 }
 
 // Generate Connection Code
@@ -519,7 +559,6 @@ function initializeApp() {
     if (appState.isConnected && appState.connectionCode) {
         setupCoupleListeners(appState.connectionCode);
     }
-    updatePartnerStatus();
     loadCurrentWallpaper();
     updateNavActiveState('mainBtn');
 }
@@ -529,16 +568,8 @@ function handleFileUpload(e) {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
         processImageFile(file);
-        document.getElementById('uploadArea').style.borderColor = '#4ade80';
-        setTimeout(() => {
-            document.getElementById('uploadArea').style.borderColor = '';
-        }, 1000);
     } else {
         showNotification("Please select a valid image file! 🖼️", "warning");
-        document.getElementById('uploadArea').style.borderColor = '#ef4444';
-        setTimeout(() => {
-            document.getElementById('uploadArea').style.borderColor = '';
-        }, 1000);
     }
 }
 
@@ -558,16 +589,8 @@ function handleDrop(e) {
     const files = e.dataTransfer.files;
     if (files.length > 0 && files[0].type.startsWith('image/')) {
         processImageFile(files[0]);
-        e.currentTarget.style.borderColor = '#4ade80';
-        setTimeout(() => {
-            e.currentTarget.style.borderColor = '';
-        }, 1000);
     } else {
         showNotification("Please drop a valid image file! 🖼️", "warning");
-        e.currentTarget.style.borderColor = '#ef4444';
-        setTimeout(() => {
-            e.currentTarget.style.borderColor = '';
-        }, 1000);
     }
 }
 
@@ -619,20 +642,10 @@ async function uploadWallpaperToFirebase(imageUrl, fileName) {
 
 // Quick Actions
 function handleCamera() {
-    const cameraBtn = document.getElementById('cameraBtn');
-    cameraBtn.style.transform = 'scale(0.9)';
-    setTimeout(() => {
-        cameraBtn.style.transform = 'scale(1)';
-    }, 150);
     showNotification("Camera feature coming soon! 📷", "info");
 }
 
 function handleGallery() {
-    const galleryBtn = document.getElementById('galleryBtn');
-    galleryBtn.style.transform = 'scale(0.9)';
-    setTimeout(() => {
-        galleryBtn.style.transform = 'scale(1)';
-    }, 150);
     document.getElementById('fileInput').click();
 }
 
@@ -732,14 +745,10 @@ async function loadHistory() {
             `;
             
             item.addEventListener('click', async () => {
-                item.style.transform = 'scale(0.95)';
-                setTimeout(async () => {
-                    item.style.transform = 'scale(1)';
-                    await uploadWallpaperToFirebase(wallpaper.url, wallpaper.title);
-                    showScreen('app');
-                    updateNavActiveState('mainBtn');
-                    showNotification("Wallpaper restored! 🔄", "success");
-                }, 150);
+                await uploadWallpaperToFirebase(wallpaper.url, wallpaper.title);
+                showScreen('app');
+                updateNavActiveState('mainBtn');
+                showNotification("Wallpaper restored! 🔄", "success");
             });
             
             historyGrid.appendChild(item);
@@ -751,7 +760,7 @@ async function loadHistory() {
     }
 }
 
-// Load Vault (demo images)
+// Load Vault
 function loadVault() {
     const vaultGrid = document.getElementById('vaultGrid');
     vaultGrid.innerHTML = '';
@@ -780,78 +789,19 @@ function loadVault() {
         `;
         
         vaultItem.addEventListener('click', async () => {
-            vaultItem.style.transform = 'scale(0.95)';
-            setTimeout(async () => {
-                vaultItem.style.transform = 'scale(1)';
-                await uploadWallpaperToFirebase(item.url, item.title);
-                showScreen('app');
-                updateNavActiveState('mainBtn');
-                showNotification("Wallpaper set from vault! 💎", "success");
-            }, 150);
+            await uploadWallpaperToFirebase(item.url, item.title);
+            showScreen('app');
+            updateNavActiveState('mainBtn');
+            showNotification("Wallpaper set from vault! 💎", "success");
         });
         
         vaultGrid.appendChild(vaultItem);
     });
 }
 
-// Partner Status
-function updatePartnerStatus(isOnline = null) {
-    const statusElement = document.getElementById('partnerStatus');
-    const indicator = document.querySelector('.status-indicator');
-    
-    if (!appState.isConnected) {
-        statusElement.textContent = 'Not connected';
-        indicator.classList.add('offline');
-        return;
-    }
-    
-    if (isOnline === null) {
-        // Initial load - fetch from Firebase
-        const partnerPath = appState.role === 'creator' ? 'partner' : 'creator';
-        coupleRef.child(`${partnerPath}/isOnline`).once('value', (snapshot) => {
-            updatePartnerStatus(snapshot.val());
-        });
-        return;
-    }
-    
-    if (isOnline) {
-        statusElement.textContent = `${appState.partner} is online`;
-        indicator.classList.remove('offline');
-    } else {
-        statusElement.textContent = `${appState.partner} was online recently`;
-        indicator.classList.add('offline');
-    }
-}
-
-function updatePartnerLastSeen(timestamp) {
-    const statusElement = document.getElementById('partnerStatus');
-    const indicator = document.querySelector('.status-indicator');
-    
-    if (!appState.isConnected) return;
-    
-    const now = Date.now();
-    const diff = now - timestamp;
-    
-    if (diff < 60000) {
-        statusElement.textContent = `${appState.partner} is online`;
-        indicator.classList.remove('offline');
-    } else {
-        const timeAgo = formatTime(timestamp);
-        statusElement.textContent = `${appState.partner} was online ${timeAgo}`;
-        indicator.classList.add('offline');
-    }
-}
-
 // Disconnect
 async function handleDisconnect() {
-    const disconnectBtn = document.getElementById('disconnectBtn');
-    
-    disconnectBtn.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-        disconnectBtn.style.transform = 'scale(1)';
-    }, 150);
-    
-    if (!confirm('Are you sure you want to disconnect? This will end your romantic sync! 💔')) {
+    if (!confirm('Are you sure you want to disconnect? This will end your romantic sync and clear all chat messages! 💔')) {
         return;
     }
     
@@ -864,10 +814,21 @@ async function handleDisconnect() {
             });
         }
         
+        // Clear chat messages
+        if (appState.connectionCode) {
+            await window.firebaseDB.ref(`chats/${appState.connectionCode}`).remove();
+        }
+        
         // Remove listeners
         if (coupleRef) coupleRef.off();
         if (wallpapersRef) wallpapersRef.off();
         if (presenceRef) presenceRef.off();
+        if (partnerPresenceRef) partnerPresenceRef.off();
+        
+        // Cleanup chat
+        if (typeof window.cleanupChat === 'function') {
+            window.cleanupChat();
+        }
         
         // Reset app state
         appState = {
@@ -972,21 +933,3 @@ function loadAppState() {
         console.error('Error loading state:', error);
     }
 }
-
-// Add CSS animations
-const additionalStyles = `
-@keyframes fadeOut {
-    from { opacity: 1; transform: translateY(0) scale(1); }
-    to { opacity: 0; transform: translateY(-20px) scale(0.95); }
-}
-
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-10px); }
-    75% { transform: translateX(10px); }
-}
-`;
-
-const styleSheet = document.createElement('style');
-styleSheet.textContent = additionalStyles;
-document.head.appendChild(styleSheet);
