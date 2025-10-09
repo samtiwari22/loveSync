@@ -219,6 +219,11 @@ body {
     }
 }
 
+@keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(-20px) scale(0.95); }
+}
+
 /* Welcome Screen */
 .welcome-content {
     text-align: center;
@@ -441,21 +446,6 @@ body {
     margin-top: 2rem;
     position: relative;
     overflow: hidden;
-}
-
-.back-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transition: left 0.5s;
-}
-
-.back-btn:hover::before {
-    left: 100%;
 }
 
 .back-btn:hover {
@@ -698,22 +688,6 @@ body {
     overflow: hidden;
 }
 
-.upload-area::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, rgba(255, 107, 157, 0.1), rgba(196, 69, 105, 0.1));
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.upload-area:hover::before {
-    opacity: 1;
-}
-
 .upload-area:hover {
     border-color: #ff6b9d;
     background: rgba(255, 107, 157, 0.1);
@@ -767,23 +741,6 @@ body {
     align-items: center;
     gap: 0.5rem;
     min-width: 100px;
-    position: relative;
-    overflow: hidden;
-}
-
-.action-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s;
-}
-
-.action-btn:hover::before {
-    left: 100%;
 }
 
 .action-btn:hover {
@@ -801,6 +758,7 @@ body {
     transform: scale(1.2);
 }
 
+/* Partner Status - FIXED */
 .partner-status {
     display: flex;
     align-items: center;
@@ -822,17 +780,31 @@ body {
     width: 10px;
     height: 10px;
     border-radius: 50%;
+    background: #ef4444;
+    transition: all 0.3s ease;
+}
+
+.status-indicator.online {
     background: #4ade80;
     animation: pulse-status 2s infinite;
+    box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
 }
 
 .status-indicator.offline {
     background: #ef4444;
+    animation: none;
+    box-shadow: none;
 }
 
 @keyframes pulse-status {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(1.2); }
+    0%, 100% { 
+        opacity: 1; 
+        transform: scale(1); 
+    }
+    50% { 
+        opacity: 0.7; 
+        transform: scale(1.2); 
+    }
 }
 
 /* Screen Headers */
@@ -866,24 +838,6 @@ body {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     position: relative;
-}
-
-.history-item::before,
-.vault-item::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, rgba(255, 107, 157, 0.1), rgba(196, 69, 105, 0.1));
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.history-item:hover::before,
-.vault-item:hover::before {
-    opacity: 1;
 }
 
 .history-item:hover,
@@ -1018,23 +972,6 @@ body {
     border-radius: 15px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-}
-
-.danger-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s;
-}
-
-.danger-btn:hover::before {
-    left: 100%;
 }
 
 .danger-btn:hover {
